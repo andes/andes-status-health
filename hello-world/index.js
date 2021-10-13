@@ -2,7 +2,7 @@ import mongodb from 'mongodb';
 const { MongoClient } = mongodb;
 
 const HOST = process.env['ANDES_MONGO_HOST'];
-
+console.log(HOST)
 async function main() {
     const collection = await getColl('webhookLog');
 
