@@ -1,19 +1,44 @@
 import mongodb from 'mongodb';
+import { sendMessage } from './slack.js';
+import moment from 'moment';
+
 const { MongoClient } = mongodb;
 
 const HOST = process.env['ANDES_MONGO_HOST'];
-console.log(HOST)
+
+
 async function main() {
     const collection = await getColl('webhookLog');
 
+    const start = moment().subtract(1, 'hour').startOf('hour').toDate()
+    const end = moment().subtract(1, 'hour').endOf('hour').toDate()
+
     const agg = collection.aggregate([
-        { $match: { createdAt: { $gte: new Date("2021-10-13") }, status: { $ne: 200 } } },
-        { $group: { _id: { url: '$url', status: '$status' }, count: { $sum: 1 } } }
+        {
+            $match: {
+                createdAt: {
+                    $gte: start,
+                    $lte: end
+                },
+                status: { $ne: 200 }
+            }
+        },
+        { $group: { _id: { url: '$url', status: '$status' }, count: { $sum: 1 } } },
+        {
+            $project: {
+                microservicio: '$_id.url',
+                status: '$_id.status',
+                count: '$count'
+            }
+        }
     ]);
 
+    let message = '';
     for await (const item of agg) {
-        console.log(item);
+        message += `MS=${item.microservicio} STATUS=${item.status} COUNT=${item.count}\n`
     }
+
+    await sendMessage(message);
 
     process.exit(0);
 }
