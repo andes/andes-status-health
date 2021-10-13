@@ -35,10 +35,14 @@ async function main() {
 
     let message = '';
     for await (const item of agg) {
-        message += `MS=${item.microservicio} STATUS=${item.status} COUNT=${item.count}\n`
+        if (item.count > 10) {
+            message += `MS=${item.microservicio} STATUS=${item.status} COUNT=${item.count}\n`
+        }
     }
 
-    await sendMessage(message);
+    if (message.length > 0) {
+        await sendMessage(message);
+    }
 
     process.exit(0);
 }
